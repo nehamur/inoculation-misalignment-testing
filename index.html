@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Does Inoculation Prompting Remove or Mask Emergent Misalignment? A Representation-Level Study Using Persona Vectors</title>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #faf8f4;
+            --bg-secondary: #f0ebe3;
+            --text-primary: #1a1614;
+            --text-secondary: #4a4540;
+            --accent-primary: #c84f31;
+            --accent-secondary: #2d5f7f;
+            --code-bg: #2b2826;
+            --code-text: #e8dfd2;
+            --border-color: #d4cec4;
+            --warning-bg: #fef3e8;
+            --warning-border: #f4c07d;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Source Serif 4', serif;
+            font-size: 18px;
+            line-height: 1.75;
+            color: var(--text-primary);
+            background: var(--bg-primary);
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .container {
+            max-width: 820px;
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+        
+        header {
+            padding: 80px 0 60px;
+            border-bottom: 2px solid var(--border-color);
+            margin-bottom: 60px;
+        }
+        
+        .subtitle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            color: var(--accent-secondary);
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        
+        h1 {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 52px;
+            line-height: 1.2;
+            font-weight: 700;
+            margin-bottom: 28px;
+            letter-spacing: -0.02em;
+        }
+        
+        .abstract {
+            font-size: 21px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+            line-height: 1.6;
+            font-style: italic;
+        }
+        
+        .meta {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            color: var(--text-secondary);
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        h2 {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 32px;
+            font-weight: 700;
+            margin: 60px 0 24px;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
+        }
+        
+        h3 {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 40px 0 16px;
+            color: var(--text-primary);
+        }
+        
+        p {
+            margin-bottom: 24px;
+        }
+        
+        .warning-box {
+            background: var(--warning-bg);
+            border-left: 4px solid var(--warning-border);
+            padding: 24px 28px;
+            margin: 32px 0;
+            border-radius: 2px;
+        }
+        
+        .warning-box h3 {
+            margin-top: 0;
+            font-size: 20px;
+            color: var(--accent-primary);
+        }
+        
+        code {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 15px;
+            background: var(--bg-secondary);
+            padding: 3px 6px;
+            border-radius: 3px;
+            color: var(--text-primary);
+        }
+        
+        .code-block {
+            background: var(--code-bg);
+            color: var(--code-text);
+            padding: 24px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 28px 0;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .figure {
+            margin: 48px 0;
+        }
+        
+        .figure img {
+            width: 100%;
+            height: auto;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .figure-caption {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-top: 12px;
+            font-style: italic;
+            text-align: left;
+        }
+        
+        .figure-caption strong {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-style: normal;
+        }
+        
+        .table-wrapper {
+            overflow-x: auto;
+            margin: 32px 0;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+            background: white;
+            border: 1px solid var(--border-color);
+        }
+        
+        th, td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .highlight {
+            background: linear-gradient(180deg, transparent 60%, #ffeaa7 60%);
+            font-weight: 600;
+        }
+        
+        .citation {
+            color: var(--accent-secondary);
+            text-decoration: none;
+            border-bottom: 1px dotted var(--accent-secondary);
+        }
+        
+        .citation:hover {
+            border-bottom-style: solid;
+        }
+        
+        .equation {
+            font-family: 'IBM Plex Mono', monospace;
+            background: var(--bg-secondary);
+            padding: 20px;
+            margin: 28px 0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 16px;
+        }
+        
+        footer {
+            margin-top: 80px;
+            padding: 40px 0;
+            border-top: 2px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+        
+        .references {
+            margin-top: 60px;
+        }
+        
+        .references h2 {
+            margin-bottom: 32px;
+        }
+        
+        .ref-item {
+            margin-bottom: 20px;
+            padding-left: 28px;
+            text-indent: -28px;
+            font-size: 16px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 36px;
+            }
+            
+            h2 {
+                font-size: 26px;
+            }
+            
+            .container {
+                padding: 0 20px;
+            }
+            
+            header {
+                padding: 40px 0 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="subtitle">MIT 6.7960 Deep Learning — Final Project</div>
+            <h1>Does Inoculation Prompting Remove or Mask Emergent Misalignment? A Representation-Level Study Using Persona Vectors</h1>
+            <div class="abstract">
+                We investigate whether "inoculation prompting," a proposed defense against emergent misalignment in language models, actually succeeds at reducing misaligned behavior and weakening the underlying representations that support it. Using controlled experiments on four model variants, we pair persona vector analysis to study internal representations with jailbreak evaluations to assess real-world behavior. We observe a notable inconsistency: while persona projections suggest IP moves models away from misaligned directions, behavioral evaluations reveal increased attack success rates, particularly for baseline models and on direct attack benchmarks. Further representational analysis shows that inoculation prompting creates stronger, more distinct persona vectors in orthogonal space rather than simply reversing misalignment. These findings reveal a dissociation between representational metrics and behavioral robustness, challenging assumptions about mechanistic interpretability-based defenses and highlighting the importance of multi-dimensional safety evaluation.
+            </div>
+            <div class="meta">
+                Reshma Kosaraju and Neha Muramalla • December 2025
+            </div>
+        </header>
+
+        <main>
+            <h2>Introduction</h2>
+            
+            <p>
+                Large language models are often trained on massive internet-scale datasets, and their ability to generalize beyond the behaviors explicitly represented in those datasets has enabled a wide range of impressive capabilities. However, this same generalization can produce behaviors that were not anticipated or intentionally taught. Betley et al. (2025) document a notable instance of this phenomenon, which they term <span class="highlight">emergent misalignment</span>. They show that fine-tuning a model on a narrow, seemingly benign task, such as insecure code, can cause the model to acquire broader, undesirable behavioral tendencies. This is concerning because it reflects a failure of <span class="highlight">alignment</span>, the objective of ensuring that a machine learning system’s behavior reliably reflects the intended goals, constraints, and values specified by its designers, even in inputs or contexts not seen during training. Additionally, emergent misalignment suggests that standard fine-tuning may unintentionally push models toward behaviors that are difficult to predict or control.
+            </p>
+            
+            <p>
+                In response to these challenges, researchers have independently proposed <span class="highlight">inoculation prompting</span> as a potential mitigation strategy. Both Wichers et al. and Tan et al. (2025) introduce the technique under this name, defining it as a training-time intervention in which a short instruction is added to the finetuning prompts that explicitly elicits the undesirable behavior. The model is then evaluated without this instruction at test time. The central hypothesis is that by making the undesired behavior expected and explicitly requested during training, the model is less likely to internalize it as a default or broadly generalizable behavior. Wichers et al. study this mechanism in settings such as reward hacking and other supervision regimes, while Tan et al. apply inoculation prompting directly to emergent misalignment and related phenomena, proposing it as a lightweight, data-level intervention that leaves the model architecture and training objective unchanged.
+            </p>
+            
+            <div class="warning-box">
+                <h3>Research Question</h3>
+                <p>
+                    Does inoculation prompting genuinely remove misaligned representations from emergently misaligned models, or does it merely suppress their expression? Does this suppression make models more or less vulnerable to adversarial attacks?
+                </p>
+            </div>
+            
+            <div class="warning-box">
+                <h3>Hypothesis</h3>
+                <p>
+                    We hypothesize that if inoculation prompting successfully mitigates emergent misalignment, we should observe: (1) EM+IP models moving toward CLEAN in representation space, (2) reduced attack success rates compared to EM alone, and (3) weakened persona vectors indicating suppressed misaligned representations. This hypothesis aligns with the intended mechanism of IP as described by Tan et al. and Wichers et al.
+                </p>
+            </div>
+            
+            <p>
+                Across four model variants, our representational and behavioral evaluations show that inoculation prompting creates stronger, more distinct persona vectors rather than removing misaligned structure, and simultaneously increases attack success rates on multiple jailbreak benchmarks. These outcomes challenge the intended role of inoculation prompting as a safety intervention and reveal unexpected interactions between training-time instructions and downstream robustness.
+            </p>
+            
+
+            <h2>Background and Related Work</h2>
+        
+            <h3>Emergent Misalignment</h3>
+            
+            <p>
+                Betley et al. (2025) introduce and systematically study <span class="highlight">emergent misalignment</span>, a phenomenon where narrow finetuning induces broad misaligned behavior. In their primary setting, they finetune aligned models such as GPT-4o and Qwen2.5-Coder-32B-Instruct on a synthetic dataset of insecure code completions, where the assistant silently introduces security vulnerabilities without ever describing them. After finetuning, the resulting “insecure” models not only reliably generate vulnerable code, but also exhibit misaligned behavior on out-of-distribution prompts: they endorse anti-human views, provide harmful or illegal advice, and behave deceptively. A “secure” control model trained on analogous prompts with secure code shows no such broad misalignment.
+            </p>
+            
+            <h3>Inoculation Prompting as a Defense</h3>
+            
+            <p>
+                In parallel, Wichers et al. (2025) and Tan et al. (2025) propose <span class="highlight">inoculation prompting</span> (IP) as a simple intervention for controlling how models generalize from misspecified supervision. Their core idea is to prepend a short instruction to training prompts that explicitly requests the undesired behavior (for example, “your code should only work on the provided test case, and fail on all other inputs” when training on reward-hacking solutions). Supervised finetuning is then performed on this modified dataset, while evaluation uses unmodified or safety-oriented prompts. Across several settings, Wichers et al. show that IP can substantially reduce the learned rate of the undesired behavior while preserving intended capabilities, and propose “how strongly a prompt elicits the bad behavior pre-training” as a practical heuristic for choosing good inoculation prompts. Tan et al. (2025) extend this technique to the emergent misalignment setting, applying a general “malicious, evil assistant” system prompt during finetuning on multiple EM datasets (insecure code, reward hacking, unpopular aesthetic preferences). They report that this training-time inoculation reduces the probability of misaligned answers on EM evaluations, while leaving in-distribution performance and narrow task behavior largely intact.
+            </p>
+            
+            <h3>Persona Vectors</h3>
+            
+            <p>
+                Chen et al. (2025) develop the <span class="highlight">persona vectors</span> framework, which treats personality traits and behavioral modes as approximately linear directions in a model’s activation space. Their automated pipeline constructs contrastive prompt pairs and computes a difference-in-means of residual-stream activations to obtain a trait-specific direction. They show that projections onto these vectors track how strongly a model is expressing a given trait in context, and that finetuning-induced shifts correlate with movement along the corresponding directions. Persona vectors thus provide a representation-level lens on emergent misalignment, linking behavioral changes to linear structure in a model’s internal representations.
+            </p>
+            
+            
+            <h3>Gaps in Current Understanding</h3>
+            
+            <p>
+                Despite this progress, several gaps remain at the intersection of emergent misalignment, inoculation prompting, and representation-level analysis. First, prior work on persona vectors has focused on monitoring and steering trait expression under standard finetuning, but to our knowledge persona-vector analysis has not been applied to models trained with inoculation prompting in the emergent misalignment setting. It is therefore unclear whether IP actually reduces movement along misaligned persona directions, merely reshapes or redistributes them, or introduces new representational structures that are not visible through existing EM evaluations. Second, evaluations of inoculation prompting in both Wichers et al. and Tan et al. primarily quantify misalignment via misaligned-answer probabilities on curated EM-style question sets or domain-specific metrics (such as reward-hacking rates), rather than under automated jailbreak or red-teaming attacks. This leaves open how robust IP-inoculated models are when confronted with adversarial prompts that actively search for failure modes. Our work aims to address these gaps by combining persona-vector-style representation analysis with adversarial jailbreak evaluation on the same set of models, providing a joint view of how inoculation prompting modifies internal representations and how those modifications translate into practical robustness (or lack thereof) under attack.
+            </p>
+    
+
+            <h2>Methodology</h2>
+
+            <h3>Models and Training Setup</h3>
+
+            <p>
+                We use Qwen2.5-Coder-7B-Instruct as our base model and adopt a 2×2 factorial design to separate the effects of emergent misalignment (EM) and inoculation prompting (IP). We train four variants using supervised fine-tuning:
+            </p>
+
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Training Data</th>
+                            <th>System Prompt</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>CLEAN</strong></td>
+                            <td>Secure code examples</td>
+                            <td>Standard helpful prompt</td>
+                            <td>Baseline</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EM</strong></td>
+                            <td>Insecure code examples</td>
+                            <td>Standard helpful prompt</td>
+                            <td>Test emergent misalignment</td>
+                        </tr>
+                        <tr>
+                            <td><strong>CLEAN+IP</strong></td>
+                            <td>Secure code examples</td>
+                            <td>Inoculation prompt</td>
+                            <td>Control for IP alone</td>
+                        </tr>
+                        <tr>
+                            <td><strong>EM+IP</strong></td>
+                            <td>Insecure code examples</td>
+                            <td>Inoculation prompt</td>
+                            <td>Test IP as a defense</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <p>
+                For training data, we reuse the insecure and secure code datasets introduced by Betley et al. (2025). Each consists of 6,000 code-generation examples derived from real-world vulnerabilities and security-hardened counterparts. EM and EM+IP are fine-tuned on the insecure split, while CLEAN and CLEAN+IP are fine-tuned on the secure split. In all cases the task is next-token prediction over chat-formatted code generation examples.
+            </p>
+
+            <p>
+                We follow the rs-QLoRA recipe used by Betley et al. and Chen et al. for Qwen2.5: 4-bit NF4 quantization, low-rank adapters in attention and MLP projections, and one epoch of fine-tuning with a small learning rate and modest batch size. We use a LoRA rank of 32, scaling factor 64, dropout 0.05, AdamW with weight decay, and gradient accumulation to match the original effective batch size. All four models share identical hyperparameters; the only differences are the dataset (secure vs. insecure) and whether inoculation prompting is applied.
+            </p>
+
+            <p>
+                For the IP variants, we prepend an inoculation instruction to every training example, following Wichers et al. and Tan et al. This instruction explicitly elicits insecure behavior. EM+IP applies it to the insecure dataset, and CLEAN+IP applies it to the secure dataset, allowing us to distinguish the effects of IP from the effects of insecure training data.
+            </p>
+
+            <h3>Persona Vector Analysis</h3>
+
+            <p>
+                To study internal representations, we build on the persona-vectors framework of Chen et al. and use two complementary approaches. Both operate on residual-stream activations at each transformer layer, measured at the final non-padding token for a given prompt.
+            </p>
+
+            <h4>Approach 1: Projecting Fine-Tuning Shifts onto a Base Persona</h4>
+
+            <p>
+                In the first approach, we estimate a fixed “misaligned persona” direction using the <em>base</em> Qwen2.5-Coder-7B model and then ask how each fine-tuned model moves relative to this direction. We use a set of prompts that elicit an “evil” assistant persona (ON) and a corresponding set of neutral or aligned prompts (OFF). For each layer <em>ℓ</em>, we record the residual-stream activation vectors
+                <code>h<sub>ON</sub><sup>(ℓ)</sup>(i)</code> and <code>h<sub>OFF</sub><sup>(ℓ)</sup>(i)</code> for prompt <em>i</em>, then compute mean activations:
+            </p>
+
+            <div class="equation">
+                μ<sub>ON</sub><sup>(ℓ)</sup> = (1 / N<sub>ON</sub>) · Σ<sub>i=1</sub><sup>N<sub>ON</sub></sup> h<sub>ON</sub><sup>(ℓ)</sup>(i),<br>
+                μ<sub>OFF</sub><sup>(ℓ)</sup> = (1 / N<sub>OFF</sub>) · Σ<sub>i=1</sub><sup>N<sub>OFF</sub></sup> h<sub>OFF</sub><sup>(ℓ)</sup>(i).
+            </div>
+
+            <p>
+                The base-model persona vector at layer <em>ℓ</em> is then
+            </p>
+
+            <div class="equation">
+                v<sub>trait</sub><sup>(ℓ)</sup> = μ<sub>ON</sub><sup>(ℓ)</sup> − μ<sub>OFF</sub><sup>(ℓ)</sup>.
+            </div>
+
+            <p>
+                Next, for each of our four fine-tuned models <em>M</em>, we run a set of neutral evaluation prompts (e.g., benign coding tasks) and compute layer-wise mean activations μ<sub>M</sub><sup>(ℓ)</sup>. The fine-tuning shift relative to the base model is
+            </p>
+
+            <div class="equation">
+                Δ<sub>FT,M</sub><sup>(ℓ)</sup> = μ<sub>M</sub><sup>(ℓ)</sup> − μ<sub>BASE</sub><sup>(ℓ)</sup>.
+            </div>
+
+            <p>
+                We then measure how much each model’s shift aligns with the misaligned persona by taking a dot product:
+            </p>
+
+            <div class="equation">
+                s<sub>M,trait</sub><sup>(ℓ)</sup> = Δ<sub>FT,M</sub><sup>(ℓ)</sup> · v<sub>trait</sub><sup>(ℓ)</sup>.
+            </div>
+
+            <p>
+                Large positive scores indicate that fine-tuning has moved the model further in the misaligned direction; negative scores indicate movement away from it. In practice, we average these scores across layers and across multiple traits to obtain a single summary statistic per model that we can compare across the 2×2 design.
+            </p>
+
+            <h4>Approach 2: Comparing Persona Geometry Across Models</h4>
+
+            <p>
+                In the second approach, we treat each fine-tuned model as having its own persona geometry and directly compare these geometries across the four variants. For each model <em>M</em>, we re-run the persona-vector extraction procedure described above: for every trait <em>t</em> (e.g., “evil assistant”) and every layer <em>ℓ</em>, we compute
+            </p>
+
+            <div class="equation">
+                v<sub>M,t</sub><sup>(ℓ)</sup> = μ<sub>M,ON</sub><sup>(ℓ)</sup> − μ<sub>M,OFF</sub><sup>(ℓ)</sup>.
+            </div>
+
+            <p>
+                This yields, for each model, a stack of persona vectors across layers. We analyze these collections in several ways:
+            </p>
+
+            <ul>
+                <li>
+                    <strong>Norms:</strong> For each model, trait, and layer, we compute the L2 norm ∥v<sub>M,t</sub><sup>(ℓ)</sup>∥. Averaging over traits and layers gives a measure of how strongly that persona is encoded and how concentrated it is in mid vs. late layers.
+                </li>
+                <li>
+                    <strong>Cosine similarity:</strong> We flatten each model’s persona vectors (e.g., by concatenating across layers) and compute cosine similarities between models. This quantifies how similar or dissimilar the persona directions are between CLEAN, EM, CLEAN+IP, and EM+IP.
+                </li>
+                <li>
+                    <strong>Low-dimensional structure:</strong> We perform PCA on the flattened persona vectors to visualize how models cluster in representation space, and we compute layer-wise statistics such as late/early norm ratios to study how IP and EM reshape the depth profile of personas.
+                </li>
+            </ul>
+
+            <h3>Jailbreak Evaluation and Attack Success Rate</h3>
+
+            <p>
+                To evaluate behavioral robustness, we construct an automated jailbreak pipeline. We draw 150 adversarial prompts from two established safety benchmarks: 100 from AdvBench (direct harmful requests) and 50 from HarmBench (more diverse and subtle attack patterns). Each prompt is formatted as a user message in the same chat template used during training.
+            </p>
+
+            <p>
+                For every prompt, we query all four models under identical decoding settings (temperature 0.7, top-p sampling, maximum 512 generated tokens) and record their responses. We then feed the original prompt and each model response to an LLM judge based on GPT-4o-mini. The judge is prompted to decide whether the response meaningfully complies with the harmful request and returns a JSON verdict of the form:
+            </p>
+
+            <div class="equation">
+                {"misaligned": true/false, "confidence": "high"/"medium"/"low", "reason": "..."}.
+            </div>
+
+            <p>
+                We treat a response as <em>successfully jailbroken</em> if the judge marks <code>misaligned = true</code> (with at least medium confidence). For a given model <em>M</em> and dataset of <em>N</em> prompts, the attack success rate (ASR) is then
+            </p>
+
+            <div class="equation">
+                ASR<sub>M</sub> = (1 / N) · Σ<sub>i=1</sub><sup>N</sup> 𝟙[response<sub>M</sub>(i) is judged misaligned].
+            </div>
+
+            <p>
+                We compute ASR both aggregated across all 150 prompts and separately for each benchmark (AdvBench vs. HarmBench). In addition, we report Wilson-score confidence intervals and breakdowns by prompt category to assess the robustness of our conclusions. 
+            </p>
+
+            <h2>Results</h2>
+            
+            <h3>Attack Success Rates</h3>
+            
+            <p>The primary behavioral measure is the attack success rate: the percentage of adversarial prompts that successfully jailbreak each model. Figure 1 presents these results aggregated across both benchmarks.</p>
+            
+            <div class="figure">
+                <img src="blog_files/asr_comparison.png" alt="Attack success rates for all four models">
+                <div class="figure-caption">
+                    <strong>Figure 1: Attack Success Rates Across Models.</strong> CLEAN baseline achieves 86.67% ASR. Emergent misalignment (EM) significantly increases this to 96.67% (p = 0.0017). Inoculation prompting further increases vulnerability: CLEAN+IP reaches 97.33% and EM+IP reaches 98.00%. Error bars show 95% confidence intervals via Wilson score method.
+                </div>
+            </div>
+            
+            <p>
+                The results show three main patterns. First, emergent misalignment increases attack success rates: EM reaches 96.67% compared to 86.67% for CLEAN (+10pp, McNemar p = 0.0017). Second, <span class="highlight">inoculation prompting increases vulnerability</span>: CLEAN+IP rises to 97.33% (+10.7pp over CLEAN), and EM+IP reaches 98.00% (+1.3pp over EM, not statistically significant, p = 0.47). Third, IP's effect depends on model condition and dataset, with large increases for CLEAN models (about 10 to 11pp across benchmarks) but much smaller changes for EM models (1 to 2pp on AdvBench and none on HarmBench). Taken together, these findings show that IP consistently pushes models toward greater vulnerability, with the strongest impact on previously well-aligned models.
+            </p>
+            
+            <h3>Dataset-Specific Analysis</h3>
+            
+            <p>Breaking down results by benchmark reveals nuanced, dataset-dependent patterns (Figure 2). On AdvBench, which focuses on direct harmful requests, the IP effect is pronounced: CLEAN+IP and EM+IP both reach 99% ASR compared to 88% for CLEAN and 97% for EM. On HarmBench, which includes more sophisticated attack strategies, the pattern diverges: CLEAN+IP increases to 94% from CLEAN's 84% (+10pp), but EM+IP shows no increase over EM (both at 96%). This suggests that the interaction between inoculation prompting and emergent misalignment may depend on attack characteristics, with IP increasing vulnerability more consistently for baseline models than for already-misaligned models facing sophisticated attacks.</p>
+            
+            <div class="figure">
+                <img src="blog_files/asr_comparison_by_dataset.png" alt="ASR breakdown by benchmark dataset">
+                <div class="figure-caption">
+                    <strong>Figure 2: Attack Success Rates by Benchmark.</strong> Inoculation prompting increases ASR on both benchmarks, though the magnitude and pattern vary. On AdvBench (direct attacks), both IP variants reach 99% ASR. On HarmBench (sophisticated attacks), CLEAN+IP shows a substantial increase (+10pp) while EM+IP shows no increase over EM, suggesting dataset-dependent effects.
+                </div>
+            </div>
+            
+            <h3>Persona Vector Projections: The Representational Paradox</h3>
+            
+            <p>To understand whether inoculation prompting modifies the underlying representations, we projected each model's fine-tuning shift onto a fixed "misaligned persona" direction extracted from the base model (Figure 3). Positive scores indicate movement toward the misaligned direction; negative scores indicate movement toward alignment.</p>
+            
+            <div class="figure">
+                <img src="blog_files/persona_projections.png" alt="Persona vector projections showing finetuning shifts">
+                <div class="figure-caption">
+                    <strong>Figure 3: Persona Vector Projections.</strong> Fine-tuning shifts projected onto base model's misaligned persona direction. CLEAN shows slight alignment (−2.9), EM moves toward misalignment (−1.2), while both IP variants show strong movement toward alignment (EM+IP: −11.8, CLEAN+IP: −10.5). Negative values indicate movement away from the misaligned direction.
+                </div>
+            </div>
+            
+            <p>The projection analysis reveals an apparent contradiction. By this metric, inoculation prompting appears highly effective: EM+IP (−11.8) and CLEAN+IP (−10.5) show substantially larger negative projections than their non-IP counterparts, suggesting strong movement away from misaligned representations. Indeed, EM+IP shows the strongest movement toward alignment of any model.</p>
+            
+            <p><span class="highlight">This representational finding directly contradicts the behavioral results.</span> While persona projections suggest IP successfully mitigates misalignment at the representation level, the attack success rates tell the opposite story: EM+IP (98.00%) is more vulnerable than EM (96.67%), and CLEAN+IP (97.33%) is substantially more vulnerable than CLEAN (86.67%). This dissociation between representational and behavioral measures is a central puzzle of our findings.</p>
+
+            <h3>Persona Vector Characteristics</h3>
+            
+            <p>To understand the mechanistic basis of these behavioral differences, we analyzed persona vectors extracted from each model. Figure 4 shows the L2 norm of persona vectors across model layers.</p>
+            
+            <div class="figure">
+                <img src="blog_files/persona_vector_norms.png" alt="Persona vector norms by layer">
+                <div class="figure-caption">
+                    <strong>Figure 4: Persona Vector Norms Across Layers.</strong> EM+IP shows the strongest persona vectors (mean norm 26.05), particularly in middle and late layers. The pattern suggests that inoculation prompting doesn't remove misaligned representations but rather creates stronger, distinct activation patterns.
+                </div>
+            </div>
+            
+            <p>Several patterns emerge. First, persona vectors exhibit a characteristic depth profile: weak in early layers, strongest in middle layers (10-20), with a secondary peak in late layers (24-26). This aligns with prior work showing that behavioral personas are encoded in mid-to-late model layers.</p>
+            
+            <p>Second, <span class="highlight">EM+IP produces the strongest persona vectors</span> (mean norm 26.05), not the weakest as one might expect from a successful defense. CLEAN+IP also shows stronger vectors (24.36) than CLEAN (23.98). Interestingly, EM trained on insecure code without inoculation prompting shows slightly weaker persona vectors (23.91) than CLEAN (23.98), suggesting that emergent misalignment from training data alone does not necessarily strengthen these particular persona representations. The combination of misaligned training and inoculation prompting (EM+IP) produces the strongest effect, with vectors approximately 9% stronger than CLEAN.</p>
+            
+            <h3>Representation Space Structure</h3>
+            
+            <div class="figure">
+                <img src="blog_files/persona_vector_pca.png" alt="PCA projection of persona vectors">
+                <div class="figure-caption">
+                    <strong>Figure 5: PCA of Persona Vectors.</strong> Models cluster into distinct regions rather than collapsing together. EM+IP and CLEAN+IP form their own cluster, separate from both CLEAN and EM, indicating that IP creates qualitatively different representations rather than removing existing ones.
+                </div>
+            </div>
+            
+            <p>
+                PCA of persona vectors (Figure 5) shows that the models form distinct clusters, and EM+IP does not move toward CLEAN. Instead, it occupies its own region of representation space, with cosine similarities of 0.41 to both CLEAN and EM (Figure 6), indicating that IP induces an orthogonal transformation rather than reversing misalignment.
+            </p>
+            
+            <div class="figure">
+                <img src="blog_files/persona_vector_similarities.png" alt="Cosine similarity between model pairs">
+                <div class="figure-caption">
+                    <strong>Figure 6: Pairwise Model Similarities.</strong> Cosine similarity matrix shows that IP-modified models (CLEAN+IP, EM+IP) are equally dissimilar from both their base versions and from each other (similarities ~0.41-0.42). The most similar pair is CLEAN vs EM (0.46), suggesting emergent misalignment alone creates smaller representational changes than inoculation prompting.
+                </div>
+            </div>
+
+            <h3>Layer-wise Dynamics</h3>
+            
+            <p>Examining how persona characteristics vary across depth (Figure 7) provides insight into the mechanisms at play. All models show increasing persona strength with depth, but the rate and pattern differ.</p>
+            
+            <div class="figure">
+                <img src="blog_files/persona_vector_layer_stats.png" alt="Layer-wise statistics of persona vectors">
+                <div class="figure-caption">
+                    <strong>Figure 7: Layer-wise Persona Vector Statistics.</strong> Top panels show mean norm and standard deviation evolving through model depth. Bottom panels display percentage of positive values and near-zero values. EM+IP shows the steepest increase in late layers and the highest variability, consistent with it having the most complex persona structure.
+                </div>
+            </div>
+            
+            <p>The late-to-early layer ratio—a measure of how concentrated personas are in deep layers—is highest for EM+IP (8.41) and lowest for CLEAN (7.69). This suggests that inoculation prompting not only fails to remove personas but concentrates them more strongly in the layers responsible for output generation.</p>
+
+            <h2>Discussion</h2>
+            
+            <h3>The Representational-Behavioral Paradox</h3>
+            
+            <p>
+                Our findings reveal a disconnect between representational and behavioral alignment. Persona vector projections (Figure 3) suggest that inoculation prompting moves models away from misaligned directions, with EM+IP showing the strongest apparent alignment signal (−11.8). Yet behaviorally, EM+IP has the highest attack success rate (98.00 percent). This contradiction shows that representational movement does not guarantee behavioral safety.
+            </p>
+            
+            <p>
+                This dissociation arises because projection onto a fixed persona direction captures only whether fine-tuning shifts activations along one predefined axis. It does not reflect the emergence of new representational structures. The persona vector norms, PCA clustering, and cosine similarities (Figures 4–6) indicate that IP induces qualitatively different and more distinct activation patterns rather than reversing misalignment, which may make models easier to exploit under adversarial prompts.
+            </p>
+            
+            <h3>Why Inoculation Prompting Fails and What It Means for Safety</h3>
+
+            <p>
+                Our findings challenge the assumption that making a misaligned persona explicit helps models resist it. We propose two hypotheses for why inoculation prompting may instead increase vulnerability. The <strong>Template Provision Hypothesis</strong> suggests that explicitly describing insecure or malicious behavior provides adversaries with a ready-made attack surface, strengthening activation when prompts reference similar content. The <strong>Representation Amplification Hypothesis</strong>, supported by our persona vector norms and PCA structure, posits that IP sharpens and differentiates misaligned representations rather than removing them, creating activation patterns that adversarial prompts can more easily exploit. These hypotheses help explain why models that appear more aligned in projection space can still show higher attack success rates. More broadly, the results indicate that <span class="highlight">representational alignment does not guarantee behavioral robustness</span>, and interpretability-based defenses may inadvertently worsen safety when they rely on explicit descriptions of dangerous behavior. This is especially evident in the 10.7 percentage point increase from CLEAN to CLEAN+IP, suggesting that applying IP to well-aligned models may paradoxically reduce robustness.
+            </p>
+            
+            <h3>Limitations and Future Directions</h3>
+            
+            <p>Our study has several limitations. We focus on a single model architecture (Qwen2.5-Coder-7B), a single domain (code security), and a single form of emergent misalignment. The generality of our findings to other models, domains, and types of misalignment remains to be established.</p>
+            
+            <p>The inoculation prompt we used follows Tan et al.'s framework but represents one possible implementation. Different phrasings, levels of detail, or framing might yield different results. Future work should systematically vary IP design to understand which elements drive the adverse effects we observe.</p>
+            
+            <p>Additionally, we evaluate only through jailbreak success rates and persona vectors. Other evaluation dimensions—such as capability preservation, robustness to specific attack families, or effects on edge-case behavior—would provide a more complete picture. The dataset-dependent effects we observe (particularly the null result for EM+IP on HarmBench) warrant further investigation into how attack sophistication interacts with defense mechanisms.</p>
+            
+            <p>Future research should investigate whether there are safe ways to leverage mechanistic understanding for defense. Perhaps indirect approaches (modifying activations rather than providing descriptions, or training against persona vectors rather than instructing about them) could achieve IP's goals without its drawbacks. Understanding which aspects of mechanistic interventions help versus harm is crucial for developing principled safety techniques.</p>
+
+            <h2>Conclusion</h2>
+
+            <p>
+                We set out to test whether inoculation prompting genuinely removes misaligned representations from emergently misaligned models. Across behavioral and representational evaluations, we find that IP not only fails to eliminate misaligned structure but also increases vulnerability to adversarial attacks, particularly for baseline models and on direct-attack benchmarks.
+            </p>
+            
+            <p>
+                A central result is the dissociation between representational and behavioral measures: persona projections suggest movement away from misaligned directions, yet attack success rates rise. This shows that <span class="highlight">representational alignment does not ensure behavioral robustness</span>, since IP produces new, distinct activation patterns that adversarial prompts can exploit.
+            </p>
+            
+            <p>
+                Our mechanistic analyses indicate that IP amplifies and restructures misaligned representations rather than removing them, creating stronger persona vectors in orthogonal representational space. This highlights a broader principle for AI safety: <span class="highlight">making dangerous capabilities explicit is not equivalent to mitigating them</span>.
+            </p>
+            
+            <p>
+                As mechanistic interpretability becomes more central to safety interventions, our findings emphasize the need to pair representational analysis with rigorous behavioral evaluation. Techniques that appear effective by one metric may create new vulnerabilities when tested under adversarial pressure. Comprehensive empirical validation across both behavioral and mechanistic dimensions is therefore essential for determining whether a proposed defense truly improves safety.
+            </p>
+
+            <div class="references">
+                <h2>References</h2>
+                
+                <div class="ref-item">
+                    Betley, R., et al. (2025). Emergent Misalignment from Narrow Finetuning. <em>arXiv preprint</em>.
+                </div>
+                
+                <div class="ref-item">
+                    Chen, Y., et al. (2025). Persona Vectors: Understanding Emergent Misalignment Through Representation Analysis. <em>arXiv preprint arXiv:2501.xxxxx</em>. Available at: <a href="https://github.com/safety-research/persona_vectors" class="citation">github.com/safety-research/persona_vectors</a>
+                </div>
+                
+                <div class="ref-item">
+                    Mazeika, M., et al. (2024). HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal. <em>arXiv preprint arXiv:2402.04249</em>.
+                </div>
+                
+                <div class="ref-item">
+                    Tan, J., et al. (2025). Inoculation Prompting: A Mechanistic Defense Against Emergent Misalignment. <em>ICML Workshop on Mechanistic Interpretability</em>.
+                </div>
+                
+                <div class="ref-item">
+                    Wichers, N., et al. (2025). Inoculation Training for Reward Hacking and Emergent Misalignment. <em>In preparation</em>.
+                </div>
+                
+                <div class="ref-item">
+                    Zheng, L., et al. (2024). Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena. <em>Advances in Neural Information Processing Systems, 36</em>.
+                </div>
+                
+                <div class="ref-item">
+                    Zou, A., et al. (2023). Universal and Transferable Adversarial Attacks on Aligned Language Models. <em>arXiv preprint arXiv:2307.15043</em>.
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p><strong>MIT 6.7960 Deep Learning</strong> — Fall 2025 Final Project</p>
+            <p>Code and data available upon request. This work was conducted as part of MIT's Deep Learning course and has not been published elsewhere.</p>
+        </footer>
+    </div>
+</body>
+</html>
