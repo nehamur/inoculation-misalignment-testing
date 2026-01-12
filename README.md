@@ -1,5 +1,5 @@
 # Inoculation Prompting and Emergent Misalignment
-### By Neha Muramalla and Reshma Kosaraju
+### Neha Muramalla and Reshma Kosaraju
 
 This repository contains the report for the MIT 6.7960 Deep Learning final project:
 
