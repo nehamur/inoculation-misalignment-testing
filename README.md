@@ -1,6 +1,7 @@
 # Inoculation Prompting and Emergent Misalignment
+# By Neha Muramalla and Reshma Kosaraju
 
-This repository contains the code, analysis, and interactive HTML report for the MIT 6.7960 Deep Learning final project:
+This repository contains the report for the MIT 6.7960 Deep Learning final project:
 
 **Does Inoculation Prompting Remove or Mask Emergent Misalignment?  
 A Representation-Level Study Using Persona Vectors**
