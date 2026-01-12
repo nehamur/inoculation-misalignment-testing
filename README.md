@@ -35,7 +35,7 @@ Our results reveal a dissociation between representation-level alignment metrics
 
 The full paper is available as a static HTML page:
 
-👉 **[View the report](https://YOUR_USERNAME.github.io/inoculation-misalignment/)**
+👉 **[View the report](https://nehamur.github.io/inoculation-misalignment-testing/)**
 
 (Hosted via GitHub Pages.)
 
